@@ -128,63 +128,77 @@ async def proceed_to_next(message: types.Message, state: FSMContext):
         await finish_test(message, state)
 
 async def finish_test(message: types.Message, state: FSMContext):
+    # 1. Congratulation
+    await message.answer("🎉 <b>Вітаю! Ви відповіли на всі питання!</b>\n\nТепер починається найцікавіше — аналіз вашого профілю.", parse_mode="HTML")
+    
+    # 2. Start Timer & Analysis
+    timer_msg = await message.answer("⏳ <b>Запускаю процес аналізу...</b>\nЗалишилось: 2:00", parse_mode="HTML")
+    
+    # Run scoring in background/parallel to timer if needed, 
+    # but the user wants results AFTER the countdown.
     data = await state.get_data()
     session_id = data.get("session_id")
     
-    # Calc scores
-    # We need to reload session with answers from DB
+    # Prepare data for scoring
     session_obj = await db_repo.get_session_with_answers(session_id)
-    # Convert DB session to Pydantic UserSession? 
-    # Or Engine adapts. For MVP engine takes Pydantic models.
-    # We need a mapper.
-    # Quick fix: Construct UserSession from DB object manually
     from core.models import UserSession as PydanticSession, UserAnswer
-    
     p_answers = [
         UserAnswer(question_id=a.question_id, selected_option_id=a.selected_option_id, open_text_input=a.open_text_input)
         for a in session_obj.answers
     ]
-    
     p_session = PydanticSession(
          user_id=session_obj.user_id,
          started_at=session_obj.started_at,
          answers=p_answers
     )
-    
     result = engine.calculate_scores(p_session)
     await state.update_data(scoring_result=result.model_dump())
+
+    # Start countdown loop (2 minutes = 120 seconds)
+    # We edit every 5-10 seconds to avoid hitting Telegram limits
+    total_seconds = 120
+    step = 5
     
-    # AI Synthesis if needed
-    meta_title = None
+    # In parallel, we can start the AI synthesis so it's ready when timer ends
+    ai_task = None
     if engine.needs_meta_archetype(result):
-        # Call AI
-        # This should be async and allow user to wait?
-        await message.answer("⏳ Аналізую ваші результати за допомогою AI...")
-        # For MVP Sync call or await
         primary_names = [a.value for a in result.primary_cluster]
-        ai_res = await ai_service.synthesize_meta_archetype(primary_names)
-        meta_title = ai_res.get("title")
-        # Store for PDF
-        await state.update_data(meta_title=meta_title)
+        ai_task = asyncio.create_task(ai_service.synthesize_meta_archetype(primary_names))
+
+    for remaining in range(total_seconds - step, -1, -step):
+        await asyncio.sleep(step)
+        mins, secs = divmod(remaining, 60)
+        await timer_msg.edit_text(f"⏳ <b>Аналізую ваші результати...</b>\nЗалишилось: {mins}:{secs:02d}", parse_mode="HTML")
+    
+    # Ensure AI is done
+    meta_title = None
+    if ai_task:
+        try:
+            ai_res = await ai_task
+            meta_title = ai_res.get("title")
+            await state.update_data(meta_title=meta_title)
+        except Exception as e:
+            import logging
+            logging.error(f"AI Synthesis failed during timer: {e}")
+
+    # 3. Final Results
+    await timer_msg.delete()
     
     # Generate Chart
     chart_buf = create_radar_chart(result.archetype_scores)
     
-    # Send Results
-    caption = f"🏁 <b>Тест завершено!</b>\n\n"
+    caption = f"🏁 <b>Ваші результати готові!</b>\n\n"
     if meta_title:
         caption += f"🔮 <b>Ваш Мета-Архетип:</b> {meta_title}\n\n"
     else:
-        # Show top 3
         top = result.primary_cluster[:3]
         caption += f"Ваші топ архетипи: {', '.join([t.ukrainian_name for t in top])}\n\n"
         
-    caption += "Сильні сторони та опис доступні у повному звіті."
+    caption += "Повний опис стратегії доступний у звіті нижче."
     
     input_file = BufferedInputFile(chart_buf.getvalue(), filename="chart.png")
-    
     await message.answer_photo(input_file, caption=caption, parse_mode="HTML")
-    await message.answer("Отримайте стратегію:", reply_markup=get_lead_magnet_keyboard())
+    await message.answer("Щоб отримати повний PDF-звіт та стратегію, заповніть дані:", reply_markup=get_lead_magnet_keyboard())
     await state.set_state(LeadMagnetStates.waiting_for_name)
 
 @router.callback_query(F.data == "get_report")
