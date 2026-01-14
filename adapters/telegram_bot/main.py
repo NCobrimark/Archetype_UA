@@ -20,6 +20,11 @@ async def main():
     await db_repo.init_db()
     
     # Init Bot
+    # DEBUGGING: Print Env Vars (Safe)
+    logging.info(f"DEBUG: Environment Keys: {[k for k in os.environ.keys() if 'TOKEN' in k or 'KEY' in k]}")
+    raw_token = os.environ.get("BOT_TOKEN")
+    logging.info(f"DEBUG: Raw os.environ['BOT_TOKEN'] type: {type(raw_token)}, length: {len(raw_token) if raw_token else 'None'}")
+    
     token = settings.BOT_TOKEN
     safe_token = f"{token[:5]}...{token[-5:]}" if token and len(token) > 10 else "INVALID_OR_EMPTY"
     logging.info(f" DEBUG: Initializing Bot with token: {safe_token} (Length: {len(token)})")
