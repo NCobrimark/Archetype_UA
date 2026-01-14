@@ -4,12 +4,12 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile, BufferedInputFile
 
-from ...core.engine import ArchetypeEngine
-from ...adapters.db_repo import db_repo
-from ...reports.chart_maker import create_radar_chart
-from ...reports.pdf_generator import generate_pdf_report
-from ...core.ai_service import ai_service
-from ...core.models import UserSession, Question
+from core.engine import ArchetypeEngine
+from adapters.db_repo import db_repo
+from reports.chart_maker import create_radar_chart
+from reports.pdf_generator import generate_pdf_report
+from core.ai_service import ai_service
+from core.models import UserSession, Question
 from .states import TestStates, LeadMagnetStates
 from .keyboards import get_question_keyboard, get_lead_magnet_keyboard
 
@@ -87,7 +87,7 @@ async def finish_test(message: types.Message, state: FSMContext):
     # Or Engine adapts. For MVP engine takes Pydantic models.
     # We need a mapper.
     # Quick fix: Construct UserSession from DB object manually
-    from ...core.models import UserSession as PydanticSession, UserAnswer
+    from core.models import UserSession as PydanticSession, UserAnswer
     
     p_answers = [
         UserAnswer(question_id=a.question_id, selected_option_id=a.selected_option_id, open_text_input=a.open_text_input)

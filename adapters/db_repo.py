@@ -1,8 +1,8 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select, update
-from ..core.config import settings
-from ..core.db_models import Base, User, Session, Answer
+from core.config import settings
+from core.db_models import Base, User, Session, Answer
 
 class DBRepo:
     def __init__(self):

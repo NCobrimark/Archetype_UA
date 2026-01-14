@@ -1,7 +1,7 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from typing import List
-from ...core.models import QuestionOption
+from core.models import QuestionOption
 
 def get_question_keyboard(options: List[QuestionOption]) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
