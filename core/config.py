@@ -1,7 +1,15 @@
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
+    from pydantic import field_validator
+    
     BOT_TOKEN: str = ""
+    
+    @field_validator("BOT_TOKEN", mode="before")
+    @classmethod
+    def clean_token(cls, v):
+        return v.strip() if v else v
+
     OPENAI_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
     OPENROUTER_API_KEY: str = ""
