@@ -24,17 +24,7 @@ async def main():
     load_dotenv()
     
     # Init Bot
-    # DEBUGGING: Print ALL Env Keys (to see what exists)
-    logging.info(f"DEBUG: ALL Environment Keys: {list(os.environ.keys())}")
-    
-    raw_token = os.environ.get("BOT_TOKEN")
-    logging.info(f"DEBUG: Raw os.environ['BOT_TOKEN'] type: {type(raw_token)}, length: {len(raw_token) if raw_token else 'None'}")
-    
-    token = settings.BOT_TOKEN
-    safe_token = f"{token[:5]}...{token[-5:]}" if token and len(token) > 10 else "INVALID_OR_EMPTY"
-    logging.info(f" DEBUG: Initializing Bot with token: {safe_token} (Length: {len(token)})")
-    
-    bot = Bot(token=token)
+    bot = Bot(token=settings.BOT_TOKEN)
     dp = Dispatcher(storage=MemoryStorage())
     
     # Register Routers
