@@ -18,10 +18,15 @@ async def main():
     
     # Init DB
     await db_repo.init_db()
+
+    # Load .env explicitly (just in case)
+    from dotenv import load_dotenv
+    load_dotenv()
     
     # Init Bot
-    # DEBUGGING: Print Env Vars (Safe)
-    logging.info(f"DEBUG: Environment Keys: {[k for k in os.environ.keys() if 'TOKEN' in k or 'KEY' in k]}")
+    # DEBUGGING: Print ALL Env Keys (to see what exists)
+    logging.info(f"DEBUG: ALL Environment Keys: {list(os.environ.keys())}")
+    
     raw_token = os.environ.get("BOT_TOKEN")
     logging.info(f"DEBUG: Raw os.environ['BOT_TOKEN'] type: {type(raw_token)}, length: {len(raw_token) if raw_token else 'None'}")
     
