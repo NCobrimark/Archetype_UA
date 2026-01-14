@@ -2,6 +2,7 @@ from aiogram.fsm.state import State, StatesGroup
 
 class TestStates(StatesGroup):
     answering_questions = State() # Loop for 36 questions
+    waiting_for_open_text = State() 
     results_ready = State() # Show radar chart
     
 class LeadMagnetStates(StatesGroup):

@@ -1,4 +1,5 @@
 import io
+import random
 from aiogram import Router, F, types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -25,16 +26,33 @@ async def cmd_start(message: types.Message, state: FSMContext):
     user = await db_repo.get_or_create_user(message.from_user.id, message.from_user.full_name)
     session = await db_repo.create_session(user.id)
     
-    await state.update_data(session_id=session.id, current_q_index=0)
+    # 2. Randomize Question IDs
+    q_ids = list(engine.questions.keys())
+    random.shuffle(q_ids)
     
-    # 2. Send Intro
+    await state.update_data(
+        session_id=session.id, 
+        current_q_index=0,
+        question_order=q_ids
+    )
+    
+    # 3. Send Intro
     await message.answer("Вітаю! Це тест на Архетипи. 36 питань допоможуть визначити ваш профіль.")
     
-    # 3. Send Q1
-    await send_question(message, 1)
+    # 4. Send Q1
+    await send_question(message, state)
     await state.set_state(TestStates.answering_questions)
 
-async def send_question(message: types.Message, q_id: int):
+async def send_question(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    q_index = data.get("current_q_index", 0)
+    q_order = data.get("question_order")
+    
+    if not q_order:
+        # Fallback if state lost or first run
+        q_order = list(engine.questions.keys())
+    
+    q_id = q_order[q_index]
     q = engine.questions.get(q_id)
     if not q:
         import logging
@@ -42,7 +60,8 @@ async def send_question(message: types.Message, q_id: int):
         await message.answer("⚠️ Вибачте, сталася технічна помилка. Питання не знайдено.")
         return
     
-    text = f"<b>{q.id}. {q.text}</b>\n\n{q.context}\n\n<i>{q.coaching_question}</i>"
+    
+    text = f"<b>{q_index + 1}. {q.text}</b>\n\n{q.context}\n\n<i>{q.coaching_question}</i>"
     kb = get_question_keyboard(q.options)
     await message.answer(text,  reply_markup=kb, parse_mode="HTML")
 
@@ -51,30 +70,62 @@ async def process_answer(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     q_index = data.get("current_q_index", 0)
     session_id = data.get("session_id")
+    q_order = data.get("question_order")
     
     option_id = callback.data.split(":")[1]
+    current_q_id = q_order[q_index]
     
-    # Save Answer
-    # q_id is index + 1
-    current_q_id = q_index + 1
-    
-    # For MVP assume q_id maps 1-36
+    # Handle "Own Answer" (Option F)
+    if option_id == "F":
+        await callback.message.edit_reply_markup(reply_markup=None)
+        await callback.message.answer("Будь ласка, введіть вашу власну відповідь:")
+        await state.set_state(TestStates.waiting_for_open_text)
+        await callback.answer()
+        return
+
+    # Save Standard Answer
     await db_repo.save_answer(session_id, current_q_id, option_id)
-    await callback.answer() # Ack
+    await callback.answer()
     
-    # Next Question
-    next_q_index = q_index + 1
-    next_q_id = next_q_index + 1
+    await callback.message.edit_reply_markup(reply_markup=None)
+    await proceed_to_next(callback.message, state)
+
+@router.message(TestStates.waiting_for_open_text)
+async def process_open_text(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    q_index = data.get("current_q_index", 0)
+    session_id = data.get("session_id")
+    q_order = data.get("question_order")
+    current_q_id = q_order[q_index]
     
-    if next_q_id in engine.questions:
-        await state.update_data(current_q_index=next_q_index)
-        # Edit message to show selected? Or send new?
-        # User requested conversation style somewhat implicitly. New message is safer.
-        await callback.message.edit_reply_markup(reply_markup=None) # Remove buttons from old
-        await send_question(callback.message, next_q_id)
+    # Save Answer with Text
+    await db_repo.save_answer(session_id, current_q_id, "F", open_text=message.text)
+    
+    await state.set_state(TestStates.answering_questions)
+    await proceed_to_next(message, state)
+
+async def proceed_to_next(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    q_index = data.get("current_q_index", 0)
+    q_order = data.get("question_order")
+    
+    next_index = q_index + 1
+    
+    # Intermediate Progress Messages
+    progress_messages = {
+        9: "🚀 Чудовий початок! Ви пройшли 25% тесту. Ваша щирість — ключ до точного результату.",
+        18: "🌓 Ви вже на екваторі (50%)! Архетипи починають проявлятися ясніше. Продовжуємо?",
+        27: "🏁 Залишився останній ривок (75%)! Ви вже майже бачите свій повний профіль."
+    }
+    
+    if next_index in progress_messages:
+        await message.answer(progress_messages[next_index])
+
+    if next_index < len(q_order):
+        await state.update_data(current_q_index=next_index)
+        await send_question(message, state)
     else:
-        # Finish
-        await finish_test(callback.message, state)
+        await finish_test(message, state)
 
 async def finish_test(message: types.Message, state: FSMContext):
     data = await state.get_data()

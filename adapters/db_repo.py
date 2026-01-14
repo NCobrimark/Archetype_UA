@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select, update
+from sqlalchemy.orm import sessionmaker, selectinload
 from core.config import settings
 from core.db_models import Base, User, Session, Answer
 
@@ -61,16 +61,11 @@ class DBRepo:
 
     async def get_session_with_answers(self, session_id: int) -> Session:
         async with self.async_session() as session:
-            # Join loading needs explicit option or lazy load
             result = await session.execute(
-                select(Session).where(Session.id == session_id).execution_options(populate_existing=True)
+                select(Session)
+                .where(Session.id == session_id)
+                .options(selectinload(Session.answers))
             )
-            # Accessing session.answers will trigger lazy load if not careful in async
-            # Use selectinload in production. For now keeping simple.
-            # Actually async requires exact loading strategies usually.
-            # Let's verify compatibility. For MVP this might error if relationships aren't loaded eager.
-            pass 
-            # Placeholder: In async sqlalchemy, relationship loading requires `options(selectinload(Session.answers))`
             return result.scalar_one_or_none()
 
 db_repo = DBRepo()

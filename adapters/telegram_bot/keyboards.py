@@ -9,7 +9,7 @@ def get_question_keyboard(options: List[QuestionOption]) -> InlineKeyboardMarkup
         # Callback data format: "ans:{option_id}"
         # Truncate text for specific mobile view if needed? 
         # Telegram buttons wrap text automatically.
-        text = f"{opt.id}) {opt.text[:50]}..." if len(opt.text) > 50 else f"{opt.id}) {opt.text}"
+        text = f"{opt.id}) {opt.text}"
         builder.button(text=text, callback_data=f"ans:{opt.id}")
     builder.adjust(1) # 1 column
     return builder.as_markup()
