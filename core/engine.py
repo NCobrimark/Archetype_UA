@@ -15,19 +15,25 @@ class ArchetypeEngine:
         self.load_questions(questions_path)
 
     def load_questions(self, path: str):
-        if not os.path.exists(path):
-            # Fallback for dev environment or absolute path needed
-            path = r"c:\Users\Acer\.gemini\antigravity\playground\galactic-singularity\archetype_bot\data\questions.json"
+        # Determine strict absolute path relative to this file
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        target_path = os.path.join(base_dir, "data", "questions.json")
+        
+        if not os.path.exists(target_path):
+            print(f"CRITICAL ERROR: Questions file not found at {target_path}")
+            # Try plain relative just in case
+            if os.path.exists("data/questions.json"):
+                target_path = "data/questions.json"
         
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(target_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 for q_data in data:
                     q = Question(**q_data)
                     self.questions[q.id] = q
-            print(f"Loaded {len(self.questions)} questions.")
+            print(f"Loaded {len(self.questions)} questions from {target_path}.")
         except Exception as e:
-            print(f"Error loading questions: {e}")
+            print(f"Error loading questions from {target_path}: {e}")
 
     def calculate_scores(self, session: UserSession) -> ScoringResult:
         scores: Dict[ArchetypeType, int] = defaultdict(int)

@@ -37,7 +37,10 @@ async def cmd_start(message: types.Message, state: FSMContext):
 async def send_question(message: types.Message, q_id: int):
     q = engine.questions.get(q_id)
     if not q:
-        return # Error?
+        import logging
+        logging.error(f"Question {q_id} not found in Engine! Total Loaded: {len(engine.questions)}")
+        await message.answer("⚠️ Вибачте, сталася технічна помилка. Питання не знайдено.")
+        return
     
     text = f"<b>{q.id}. {q.text}</b>\n\n{q.context}\n\n<i>{q.coaching_question}</i>"
     kb = get_question_keyboard(q.options)
