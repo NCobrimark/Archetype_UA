@@ -20,7 +20,11 @@ async def main():
     await db_repo.init_db()
     
     # Init Bot
-    bot = Bot(token=settings.BOT_TOKEN)
+    token = settings.BOT_TOKEN
+    safe_token = f"{token[:5]}...{token[-5:]}" if token and len(token) > 10 else "INVALID_OR_EMPTY"
+    logging.info(f" DEBUG: Initializing Bot with token: {safe_token} (Length: {len(token)})")
+    
+    bot = Bot(token=token)
     dp = Dispatcher(storage=MemoryStorage())
     
     # Register Routers
