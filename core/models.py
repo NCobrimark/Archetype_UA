@@ -10,7 +10,7 @@ class ArchetypeType(str, Enum):
     CAREGIVER = "Caregiver"
     EXPLORER = "Explorer"
     LOVER = "Lover"
-    REBEL = "Rebel"  # Outlaw
+    OUTLAW = "Outlaw"
     CREATOR = "Creator"
     RULER = "Ruler"
     MAGICIAN = "Magician"
@@ -27,7 +27,7 @@ class ArchetypeType(str, Enum):
             "Caregiver": "Опікун (Caregiver)",
             "Explorer": "Шукач (Explorer)",
             "Lover": "Коханець (Lover)",
-            "Rebel": "Бунтар (Outlaw)",
+            "Outlaw": "Бунтар (Outlaw)",
             "Creator": "Творець (Creator)",
             "Ruler": "Правитель (Ruler)",
             "Magician": "Маг (Magician)",
