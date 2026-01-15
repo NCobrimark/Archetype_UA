@@ -199,11 +199,18 @@ async def finish_test(message: types.Message, state: FSMContext):
     caption = f"🏁 <b>Ваші результати готові!</b>\n\n"
     if meta_title:
         caption += f"🔮 <b>Ваш Мета-Архетип:</b> {meta_title}\n\n"
-    else:
-        top = result.primary_cluster[:3]
-        caption += f"Ваші топ архетипи: {', '.join([t.ukrainian_name for t in top])}\n\n"
+    
+    # Show Top Archetypes
+    primary_names = [t.ukrainian_name for t in result.primary_cluster]
+    caption += f"🏆 <b>Домінантні архетипи:</b> {', '.join(primary_names)}\n\n"
+    
+    # Show All Scores as requested
+    caption += "📊 <b>Детальні бали:</b>\n"
+    sorted_scores = sorted(result.archetype_scores.items(), key=lambda x: x[1], reverse=True)
+    for arch, score in sorted_scores:
+        caption += f"• {arch.ukrainian_name.split(' (')[0]}: {score}\n"
         
-    caption += "Повний опис стратегії доступний у звіті нижче."
+    caption += "\nПовний опис стратегії доступний у звіті нижче."
     
     input_file = BufferedInputFile(chart_buf.getvalue(), filename="chart.png")
     await message.answer_photo(input_file, caption=caption, parse_mode="HTML")
@@ -219,13 +226,18 @@ async def start_lead_magnet(callback: types.CallbackQuery, state: FSMContext):
 @router.message(LeadMagnetStates.waiting_for_name)
 async def process_name(message: types.Message, state: FSMContext):
     await state.update_data(user_name=message.text)
+    await message.answer("Введіть ваш номер телефону:")
+    await state.set_state(LeadMagnetStates.waiting_for_phone)
+
+@router.message(LeadMagnetStates.waiting_for_phone)
+async def process_phone(message: types.Message, state: FSMContext):
+    await state.update_data(user_phone=message.text)
     await message.answer("Введіть ваш Email (туди прийде PDF):")
     await state.set_state(LeadMagnetStates.waiting_for_email)
 
 @router.message(LeadMagnetStates.waiting_for_email)
 async def process_email(message: types.Message, state: FSMContext):
     email = message.text
-    # Basic validation?
     await state.update_data(user_email=email)
     
     # Generate PDF
@@ -246,6 +258,7 @@ async def process_email(message: types.Message, state: FSMContext):
     
     pdf_buf = generate_pdf_report(
         user_name=data.get("user_name"),
+        user_phone=data.get("user_phone", "Не вказано"),
         meta_archetype_title=data.get("meta_title", "Архетипний Профіль"),
         scoring_data=scoring_result,
         strategy_content=strategy_text,

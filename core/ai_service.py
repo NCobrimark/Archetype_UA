@@ -65,21 +65,37 @@ class AIService:
         """
         Generates the full markdown content for the strategy section of the report.
         """
+        # Load archetype descriptions for context
+        import os
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        info_path = os.path.join(base_dir, "data", "archetype_info.json")
+        descriptions = {}
+        try:
+            with open(info_path, "r", encoding="utf-8") as f:
+                descriptions = json.load(f)
+        except Exception as e:
+            print(f"Error loading descriptions: {e}")
+
+        # Construct context
+        context_str = "\n".join([f"{k}: {v.get('title')} - {v.get('core_desire')}" for k, v in descriptions.items()])
+
         prompt = (
             f"Archetype Scores: {scores}. \n"
-            "Generate a comprehensive marketing and branding strategy in Ukrainian based on these scores. "
-            "The report should include: \n"
-            "1. **Сильні сторони** вашого профілю.\n"
-            "2. **Комунікаційна стратегія**: як вам спілкуватися з аудиторією.\n"
-            "3. **Візуальні коди**: які кольори та образи використовувати.\n"
-            "4. **Маркетингові поради**: конкретні кроки для росту.\n"
-            "Use clear Markdown headers (##) and bullet points."
+            f"Archetype Context:\n{context_str}\n\n"
+            "Завдання: Створіть професійну маркетингову та брендингову стратегію для клієнта на основі його балів архетипів. "
+            "Зверніть увагу на комбінацію домінантних архетипів (тих, що мають найвищі бали).\n\n"
+            "Звіт ПОВИНЕН містити:\n"
+            "1. **Глибинний аналіз комбінації**: Як ваші архетипи взаємодіють між собою? Яку унікальну 'суперсилу' вони дають?\n"
+            "2. **Ваш Тіньовий аспект**: Чого варто остерігатися (слабкі місця).\n"
+            "3. **Маркетингова стратегія (Plan)**: Конкретні кроки з позиціонування, вибору голосу бренду (Tone of Voice) та візуального стилю.\n"
+            "4. **Рекомендації для росту**: Як масштабувати свій вплив, використовуючи ці архетипи.\n\n"
+            "Мова: Українська. Форматування: Markdown (заголовки ##, списки)."
         )
         try:
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "Ви — провідний експерт з брендингу та архетипів. Ваше завдання — створити глибоку та практичну стратегію на основі результатів тесту. Мова: Українська."},
+                    {"role": "system", "content": "Ви — експерт з брендингу, психології архетипів та стратегічного маркетингу. Створюйте контент, який виглядає як дорогий консалтинговий звіт."},
                     {"role": "user", "content": prompt}
                 ]
             )

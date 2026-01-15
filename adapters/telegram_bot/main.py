@@ -1,4 +1,4 @@
-# Bot Version: 1.0.6 - Bilingual Chart & SMTP Sync
+# Bot Version: 1.0.7 - Enhanced PDF, AI & Lead Magnet
 import asyncio
 import logging
 import sys

@@ -54,41 +54,36 @@ class ArchetypeEngine:
         if not raw_scores:
              return ScoringResult(archetype_scores={}, primary_cluster=[], secondary_cluster=[])
         
-        # Ensure we have scores for all archetypes (even 0) for the chart?
-        # Or just relevant ones. Let's keep sparse or fill 0?
-        # Fill 0 for safety
         for arch in ArchetypeType:
             if arch not in raw_scores:
                 raw_scores[arch] = 0
                 
-        max_score = max(raw_scores.values())
+        # Sort items by score DESC
+        sorted_archs = sorted(raw_scores.items(), key=lambda x: x[1], reverse=True)
         
-        # Primary Cluster: [Max, Max - 2]
-        primary = [
-            arch for arch, score in raw_scores.items() 
-            if score >= (max_score - MAX_SCORE_THRESHOLD)
-        ]
+        primary = []
+        if sorted_archs:
+            # 1st is always primary
+            primary.append(sorted_archs[0][0])
+            max_score = sorted_archs[0][1]
+            
+            # 2nd is primary if within 10% of 1st
+            if len(sorted_archs) > 1:
+                score2 = sorted_archs[1][1]
+                if max_score > 0 and (max_score - score2) / max_score <= 0.10:
+                    primary.append(sorted_archs[1][0])
+                    
+                    # 3rd is primary if within 10% of 2nd
+                    if len(sorted_archs) > 2:
+                        score3 = sorted_archs[2][1]
+                        if score2 > 0 and (score2 - score3) / score2 <= 0.10:
+                            primary.append(sorted_archs[2][0])
         
-        # Secondary Cluster: [Max - 3, Max - 5] AND < 10% diff logic
-        # User Logic: "difference with previous group < 10%"
-        # Let's calculate average of Primary.
-        avg_primary = sum(raw_scores[a] for a in primary) / len(primary)
-        
-        secondary_candidates = [
-            arch for arch, score in raw_scores.items()
-            if (max_score - SECONDARY_SCORE_THRESHOLD_END) <= score <= (max_score - SECONDARY_SCORE_THRESHOLD_START)
-        ]
-        
+        # Secondary logic remains similar or we can simplify
         secondary = []
-        if secondary_candidates:
-            avg_secondary = sum(raw_scores[a] for a in secondary_candidates) / len(secondary_candidates)
-            diff = (avg_primary - avg_secondary) / avg_primary
-            if diff < SECONDARY_PERCENTAGE_DIFF:
-                secondary = secondary_candidates
-        
-        # Sort desc
-        primary.sort(key=lambda x: raw_scores[x], reverse=True)
-        secondary.sort(key=lambda x: raw_scores[x], reverse=True)
+        # Let's just take the next 2-3 as secondary for the chart/report
+        remain = [a for a, s in sorted_archs if a not in primary]
+        secondary = remain[:3]
         
         return ScoringResult(
             archetype_scores=raw_scores,

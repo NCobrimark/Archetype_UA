@@ -28,6 +28,8 @@ async def send_report_email(to_email: str, user_name: str, pdf_buf: io.BytesIO, 
     )
 
     try:
+        # For Gmail/Railway, Port 465 with SSL is often more reliable
+        # We try to detect if port is 465
         await aiosmtplib.send(
             message,
             hostname=settings.SMTP_HOST,
@@ -35,10 +37,9 @@ async def send_report_email(to_email: str, user_name: str, pdf_buf: io.BytesIO, 
             username=settings.SMTP_USER,
             password=settings.SMTP_PASSWORD,
             use_tls=(settings.SMTP_PORT == 465),
-            start_tls=(settings.SMTP_PORT == 587)
+            start_tls=(settings.SMTP_PORT == 587 or settings.SMTP_PORT == 25)
         )
-        
-        # Also send a copy to Admin/User if needed
+        logging.info(f"Email successfully sent to {to_email} via {settings.SMTP_HOST}:{settings.SMTP_PORT}")
         if settings.ADMIN_EMAIL and settings.ADMIN_EMAIL != to_email:
              admin_msg = EmailMessage()
              admin_msg["From"] = settings.SMTP_USER

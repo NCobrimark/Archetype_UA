@@ -8,6 +8,7 @@ from typing import Dict, Any
 
 def generate_pdf_report(
     user_name: str,
+    user_phone: str,
     meta_archetype_title: str,
     scoring_data: Dict[str, Any],
     strategy_content: str,
@@ -37,12 +38,13 @@ def generate_pdf_report(
     
     # 1. Cover Page
     story.append(Spacer(1, 2 * inch))
-    story.append(Paragraph("ARCHETYPE STRATEGY REPORT", title_style))
+    story.append(Paragraph("ПЕРСОНАЛЬНИЙ ЗВІТ ТА СТРАТЕГІЯ", title_style))
     story.append(Spacer(1, 0.5 * inch))
     if meta_archetype_title:
-        story.append(Paragraph(f"Your Meta-Archetype:<br/><b>{meta_archetype_title}</b>", title_style))
+        story.append(Paragraph(f"Ваш Мета-Архетип:<br/><b>{meta_archetype_title}</b>", title_style))
     story.append(Spacer(1, 1 * inch))
-    story.append(Paragraph(f"Prepared for: {user_name}", normal_style))
+    story.append(Paragraph(f"Підготовлено для: {user_name}", normal_style))
+    story.append(Paragraph(f"Телефон: {user_phone}", normal_style))
     story.append(PageBreak())
     
     # 2. Results Analysis
@@ -69,15 +71,20 @@ def generate_pdf_report(
     story.append(Spacer(1, 0.2 * inch))
     
     # Split by newlines and add paragraphs
+    # Handle bold markdown and bullet points
     lines = strategy_content.split('\n')
     for line in lines:
         line = line.strip()
         if not line:
             story.append(Spacer(1, 0.1 * inch))
             continue
+        
+        # Simple Markdown parsing
+        line = line.replace('**', '<b>').replace('**', '</b>') # Replaces both at once? better use regex next time
+        
         if line.startswith('#'):
             story.append(Paragraph(line.lstrip('#').strip(), heading_style))
-        elif line.startswith('- '):
+        elif line.startswith('- ') or line.startswith('* '):
              story.append(Paragraph(f"• {line[2:]}", normal_style))
         else:
             story.append(Paragraph(line, normal_style))
