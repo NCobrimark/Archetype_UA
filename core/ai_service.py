@@ -65,12 +65,21 @@ class AIService:
         """
         Generates the full markdown content for the strategy section of the report.
         """
-        prompt = f"Archetype Scores: {scores}. Generate a detailed marketing strategy in Markdown."
+        prompt = (
+            f"Archetype Scores: {scores}. \n"
+            "Generate a comprehensive marketing and branding strategy in Ukrainian based on these scores. "
+            "The report should include: \n"
+            "1. **Сильні сторони** вашого профілю.\n"
+            "2. **Комунікаційна стратегія**: як вам спілкуватися з аудиторією.\n"
+            "3. **Візуальні коди**: які кольори та образи використовувати.\n"
+            "4. **Маркетингові поради**: конкретні кроки для росту.\n"
+            "Use clear Markdown headers (##) and bullet points."
+        )
         try:
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are a Branding Strategist. Analyze scores and provide actionable marketing advice in Markdown."},
+                    {"role": "system", "content": "Ви — провідний експерт з брендингу та архетипів. Ваше завдання — створити глибоку та практичну стратегію на основі результатів тесту. Мова: Українська."},
                     {"role": "user", "content": prompt}
                 ]
             )

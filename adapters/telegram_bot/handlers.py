@@ -11,8 +11,8 @@ from adapters.db_repo import db_repo
 from reports.chart_maker import create_radar_chart
 from reports.pdf_generator import generate_pdf_report
 from core.ai_service import ai_service
+from core.email_service import send_report_email
 from core.models import UserSession, Question
-from .states import TestStates, LeadMagnetStates
 from .keyboards import get_question_keyboard, get_lead_magnet_keyboard
 
 router = Router()
@@ -245,17 +245,25 @@ async def process_email(message: types.Message, state: FSMContext):
     
     pdf_buf = generate_pdf_report(
         user_name=data.get("user_name"),
-        meta_archetype_title=data.get("meta_title", "Archetype Profile"),
+        meta_archetype_title=data.get("meta_title", "Архетипний Профіль"),
         scoring_data=scoring_result,
         strategy_content=strategy_text,
         chart_buffer=chart_buf
     )
     
-    pdf_file = BufferedInputFile(pdf_buf.getvalue(), filename="Archetype_Strategy.pdf")
+    pdf_file = BufferedInputFile(pdf_buf.getvalue(), filename=f"Archetype_{data.get('user_name')}.pdf")
     
-    # Send
+    # Send via Telegram
     await message.answer_document(pdf_file, caption="Ваш персональний звіт готовий!")
-    # Also send to Admin?
-    # await bot.send_document(ADMIN_ID, pdf_file)
+    
+    # Send via Email
+    await send_report_email(
+        to_email=email,
+        user_name=data.get("user_name"),
+        pdf_buf=pdf_buf,
+        filename=f"Archetype_{data.get('user_name')}.pdf"
+    )
+    
+    await message.answer("✅ Також я щойно відправив цей звіт на вашу пошту. Перевірте папку 'Вхідні' (або 'Спам').")
     
     await state.clear()

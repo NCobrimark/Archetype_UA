@@ -12,8 +12,8 @@ def get_question_keyboard(options: List[QuestionOption]) -> InlineKeyboardMarkup
         # Telegram buttons wrap text automatically.
         # Try to force 2 lines if text is long by inserting a newline
         # Try to force 2 lines if text is long by inserting a newline
-        if len(opt.text) > 30:
-            lines = textwrap.wrap(opt.text, width=30)
+        if len(opt.text) > 60:
+            lines = textwrap.wrap(opt.text, width=60)
             if len(lines) >= 2:
                  display_text = f"{opt.id}) {lines[0]}\n{' '.join(lines[1:])}"
             else:

@@ -27,10 +27,20 @@ def create_radar_chart(scores: Dict[str, int]) -> io.BytesIO:
     ax.plot(angles, values, color='#1E90FF', linewidth=2)
     
     # Labels
-    # Convert angles to degrees? Matplotlib handles it.
-    # We need to set ticks.
+    # Convert labels to Ukrainian names, handling both strings and Enums
+    from core.models import ArchetypeType
+    display_labels = []
+    for arch_key in labels:
+        try:
+            # If it's already an Enum member or a string that matches one
+            arch_enum = ArchetypeType(arch_key) if isinstance(arch_key, str) else arch_key
+            name = arch_enum.ukrainian_name.split(' (')[0]
+            display_labels.append(name)
+        except Exception:
+            display_labels.append(str(arch_key))
+
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(labels)
+    ax.set_xticklabels(display_labels)
     
     # Y-labels options
     ax.set_yticklabels([]) # Hide radial labels for cleanliness?

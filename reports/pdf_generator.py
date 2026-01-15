@@ -45,20 +45,27 @@ def generate_pdf_report(
     story.append(Paragraph(f"Prepared for: {user_name}", normal_style))
     story.append(PageBreak())
     
-    # 2. Chart Section
-    story.append(Paragraph("Your Archetype Profile", heading_style))
+    # 2. Results Analysis
+    story.append(Paragraph("Аналіз вашого профілю", heading_style))
+    story.append(Spacer(1, 0.2 * inch))
+    
+    primary = scoring_data.get('primary_cluster', [])
+    from core.models import ArchetypeType
+    primary_names = [ArchetypeType(a).ukrainian_name if isinstance(a, str) else a.ukrainian_name for a in primary]
+    
+    story.append(Paragraph(f"<b>Ваші домінантні архетипи:</b> {', '.join(primary_names)}", normal_style))
     story.append(Spacer(1, 0.2 * inch))
     
     # Add Chart Image
-    # ReportLab needs a file path or PIL image? It accepts file-like usually?
-    # Image(filename_or_object, width, height)
-    img = Image(chart_buffer, width=6*inch, height=6*inch)
+    img = Image(chart_buffer, width=5*inch, height=5*inch)
     story.append(img)
     story.append(PageBreak())
     
-    # 3. Strategy Content (Markdown to Paragraphs - Simplified)
-    # Ideally we parse markdown. For MVP, we treat as raw text or simple split.
-    story.append(Paragraph("Strategic Recommendations", heading_style))
+    # 3. Strategy Section
+    if meta_archetype_title:
+        story.append(Paragraph(f"Стратегія для Мета-Архетипу: {meta_archetype_title}", heading_style))
+    else:
+        story.append(Paragraph("Ваша індивідуальна стратегія", heading_style))
     story.append(Spacer(1, 0.2 * inch))
     
     # Split by newlines and add paragraphs
