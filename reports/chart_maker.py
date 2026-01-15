@@ -20,7 +20,6 @@ def create_radar_chart(scores: Dict[str, int]) -> io.BytesIO:
     # Close the plot
     values += values[:1]
     angles += angles[:1]
-    labels += labels[:1] # For labels? No.
     
     fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
     

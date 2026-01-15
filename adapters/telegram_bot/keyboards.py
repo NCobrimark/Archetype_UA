@@ -11,8 +11,9 @@ def get_question_keyboard(options: List[QuestionOption]) -> InlineKeyboardMarkup
         # Truncate text for specific mobile view if needed? 
         # Telegram buttons wrap text automatically.
         # Try to force 2 lines if text is long by inserting a newline
-        if len(opt.text) > 40:
-            lines = textwrap.wrap(opt.text, width=40)
+        # Try to force 2 lines if text is long by inserting a newline
+        if len(opt.text) > 30:
+            lines = textwrap.wrap(opt.text, width=30)
             if len(lines) >= 2:
                  display_text = f"{opt.id}) {lines[0]}\n{' '.join(lines[1:])}"
             else:
