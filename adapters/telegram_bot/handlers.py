@@ -14,6 +14,7 @@ from core.ai_service import ai_service
 from core.email_service import send_report_email
 from core.models import UserSession, Question
 from .keyboards import get_question_keyboard, get_lead_magnet_keyboard
+from .states import TestStates, LeadMagnetStates
 
 router = Router()
 engine = ArchetypeEngine() # Loads questions
