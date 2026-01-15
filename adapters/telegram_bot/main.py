@@ -1,4 +1,4 @@
-# Bot Version: 1.0.8 - Pro PDF, Admin Alerts & AI Resilience
+# Bot Version: 1.0.9 - Fix Crash & AI Fallback Enabled
 import asyncio
 import logging
 import logging

@@ -3,6 +3,7 @@ import json
 import asyncio
 from .config import settings
 from .models import ArchetypeType
+import logging
 
 # Placeholder for actual API client
 # We will implement Gemini logic here
