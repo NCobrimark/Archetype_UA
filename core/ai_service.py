@@ -101,6 +101,16 @@ class AIService:
             )
             return response.choices[0].message.content
         except Exception as e:
-            return "## Strategy Error\nCould not generate strategy."
+            logging.error(f"AI Strategy Error (Check API Key): {e}")
+            # Fallback for empty/failed AI - summarize from descriptions
+            fallback = "## Ваша стратегія (Автоматичне резюме)\n\n"
+            fallback += "На жаль, сервіс ШІ тимчасово недоступний, але ось ваші ключові орієнтири на основі бази знань:\n\n"
+            for arch_key, score in sorted(scores.items(), key=lambda x: x[1], reverse=True)[:2]:
+                info = descriptions.get(arch_key, {})
+                if info:
+                    fallback += f"### {info.get('title')}\n"
+                    fallback += f"- **Тіньовий аспект:** {info.get('shadow')}\n"
+                    fallback += f"- **Позиціонування:** {info.get('tone')}\n\n"
+            return fallback
 
 ai_service = AIService()

@@ -4,6 +4,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 import io
+from datetime import datetime
 from typing import Dict, Any
 
 def generate_pdf_report(
@@ -15,63 +16,76 @@ def generate_pdf_report(
     chart_buffer: io.BytesIO
 ) -> io.BytesIO:
     """
-    Generates a PDF report.
-    Returns BytesIO.
+    Generates a PRO 10-12 page style report (compacted for PDF usability).
     """
+    import os
+    import json
+    
+    # Load detailed info
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    info_path = os.path.join(base_dir, "data", "archetype_info.json")
+    archetype_info = {}
+    try:
+        with open(info_path, "r", encoding="utf-8") as f:
+            archetype_info = json.load(f)
+    except Exception as e:
+        print(f"Error loading info: {e}")
+
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=50, leftMargin=50, topMargin=50, bottomMargin=50)
     story = []
     styles = getSampleStyleSheet()
     
     # Custom Styles
-    title_style = ParagraphStyle(
-        'MainTitle',
-        parent=styles['Heading1'],
-        fontSize=24,
-        alignment=1, # Center
-        spaceAfter=30,
-        textColor=colors.darkblue
-    )
-    
-    normal_style = styles['Normal']
-    heading_style = styles['Heading2']
-    
-    # 1. Cover Page
+    title_style = ParagraphStyle('MainTitle', parent=styles['Heading1'], fontSize=28, alignment=1, spaceAfter=40, textColor=colors.darkblue)
+    subtitle_style = ParagraphStyle('SubTitle', parent=styles['Heading2'], fontSize=18, alignment=1, spaceAfter=20, textColor=colors.blue)
+    heading_pro = ParagraphStyle('HeadingPro', parent=styles['Heading2'], fontSize=16, spaceBefore=20, spaceAfter=10, textColor=colors.darkblue)
+    normal_pro = ParagraphStyle('NormalPro', parent=styles['Normal'], fontSize=11, leading=14, spaceAfter=10)
+    bullet_style = ParagraphStyle('Bullet', parent=normal_pro, leftIndent=20, firstLineIndent=-10)
+
+    # 1. COVER PAGE
     story.append(Spacer(1, 2 * inch))
-    story.append(Paragraph("ПЕРСОНАЛЬНИЙ ЗВІТ ТА СТРАТЕГІЯ", title_style))
-    story.append(Spacer(1, 0.5 * inch))
+    story.append(Paragraph("БРЕНД-СТРАТЕГІЯ ЗА АРХЕТИПАМИ", title_style))
     if meta_archetype_title:
-        story.append(Paragraph(f"Ваш Мета-Архетип:<br/><b>{meta_archetype_title}</b>", title_style))
+        story.append(Paragraph(f"Ваш персональний профіль: {meta_archetype_title}", subtitle_style))
     story.append(Spacer(1, 1 * inch))
-    story.append(Paragraph(f"Підготовлено для: {user_name}", normal_style))
-    story.append(Paragraph(f"Телефон: {user_phone}", normal_style))
+    story.append(Paragraph(f"<b>Клієнт:</b> {user_name}", normal_pro))
+    story.append(Paragraph(f"<b>Телефон:</b> {user_phone}", normal_pro))
+    story.append(Paragraph(f"<b>Дата:</b> {datetime.now().strftime('%d.%m.%Y')}", normal_pro))
     story.append(PageBreak())
-    
-    # 2. Results Analysis
-    story.append(Paragraph("Аналіз вашого профілю", heading_style))
-    story.append(Spacer(1, 0.2 * inch))
-    
-    primary = scoring_data.get('primary_cluster', [])
-    from core.models import ArchetypeType
-    primary_names = [ArchetypeType(a).ukrainian_name if isinstance(a, str) else a.ukrainian_name for a in primary]
-    
-    story.append(Paragraph(f"<b>Ваші домінантні архетипи:</b> {', '.join(primary_names)}", normal_style))
-    story.append(Spacer(1, 0.2 * inch))
-    
-    # Add Chart Image
+
+    # 2. THE ARCHETYPE WHEEL
+    story.append(Paragraph("Ваша архітектура особистості", heading_pro))
+    story.append(Paragraph("Цей графік відображає баланс 12 базових архетипів у вашому поточному стані. Домінантні архетипи визначають вашу стратегію поведінки та сприйняття світу.", normal_pro))
     img = Image(chart_buffer, width=5*inch, height=5*inch)
     story.append(img)
     story.append(PageBreak())
+
+    # 3. DOMINANT ARCHETYPES (DNA)
+    story.append(Paragraph("Глибинний аналіз домінантних архетипів", heading_pro))
+    primary = scoring_data.get('primary_cluster', [])
+    for arch_key in primary:
+        # Resolve key
+        key = arch_key.value if hasattr(arch_key, 'value') else str(arch_key)
+        info = archetype_info.get(key, {})
+        if not info: continue
+        
+        story.append(Paragraph(f"<b>Архетип: {info.get('title')}</b>", heading_pro))
+        story.append(Paragraph(f"<i>'{info.get('motto')}'</i>", normal_pro))
+        story.append(Paragraph(f"<b>Головне бажання:</b> {info.get('core_desire')}", normal_pro))
+        story.append(Paragraph(f"<b>Ціль:</b> {info.get('goal')}", normal_pro))
+        story.append(Paragraph(f"<b>Стратегія:</b> {info.get('strategy')}", normal_pro))
+        story.append(Paragraph(f"<b>Тіньовий аспект (Shadow Side):</b> {info.get('shadow')}", normal_pro))
+        story.append(Paragraph(f"<b>Словник бренду:</b> {', '.join(info.get('vocabulary', []))}", normal_pro))
+        story.append(Spacer(1, 0.2 * inch))
     
-    # 3. Strategy Section
-    if meta_archetype_title:
-        story.append(Paragraph(f"Стратегія для Мета-Архетипу: {meta_archetype_title}", heading_style))
-    else:
-        story.append(Paragraph("Ваша індивідуальна стратегія", heading_style))
-    story.append(Spacer(1, 0.2 * inch))
-    
-    # Split by newlines and add paragraphs
-    # Handle bold markdown and bullet points
+    story.append(PageBreak())
+
+    # 4. AI-GENERATED STRATEGY
+    story.append(Paragraph("Персоналізована стратегія бренду", heading_pro))
+    story.append(Paragraph("Цей розділ згенеровано нейромережею на основі вашої унікальної комбінації архетипів.", normal_pro))
+    story.append(Spacer(1, 0.1 * inch))
+
     lines = strategy_content.split('\n')
     for line in lines:
         line = line.strip()
@@ -80,15 +94,19 @@ def generate_pdf_report(
             continue
         
         # Simple Markdown parsing
-        line = line.replace('**', '<b>').replace('**', '</b>') # Replaces both at once? better use regex next time
+        line = line.replace('**', '<b>').replace('**', '</b>')
         
-        if line.startswith('#'):
-            story.append(Paragraph(line.lstrip('#').strip(), heading_style))
+        if line.startswith('###'):
+            story.append(Paragraph(line.lstrip('#').strip(), heading_pro))
+        elif line.startswith('##'):
+            story.append(Paragraph(line.lstrip('#').strip(), heading_pro))
+        elif line.startswith('#'):
+            story.append(Paragraph(line.lstrip('#').strip(), heading_pro))
         elif line.startswith('- ') or line.startswith('* '):
-             story.append(Paragraph(f"• {line[2:]}", normal_style))
+             story.append(Paragraph(f"• {line[2:]}", bullet_style))
         else:
-            story.append(Paragraph(line, normal_style))
-            
+            story.append(Paragraph(line, normal_pro))
+
     # Build
     doc.build(story)
     buffer.seek(0)

@@ -1,5 +1,6 @@
-# Bot Version: 1.0.7 - Enhanced PDF, AI & Lead Magnet
+# Bot Version: 1.0.8 - Pro PDF, Admin Alerts & AI Resilience
 import asyncio
+import logging
 import logging
 import sys
 from aiogram import Bot, Dispatcher

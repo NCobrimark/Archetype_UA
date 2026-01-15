@@ -4,7 +4,7 @@ import io
 from .config import settings
 import logging
 
-async def send_report_email(to_email: str, user_name: str, pdf_buf: io.BytesIO, filename: str = "Archetype_Strategy.pdf"):
+async def send_report_email(to_email: str, user_name: str, user_phone: str, pdf_buf: io.BytesIO, filename: str = "Archetype_Strategy.pdf"):
     """
     Sends the PDF report to the specified email.
     """
@@ -28,8 +28,8 @@ async def send_report_email(to_email: str, user_name: str, pdf_buf: io.BytesIO, 
     )
 
     try:
-        # For Gmail/Railway, Port 465 with SSL is often more reliable
-        # We try to detect if port is 465
+        # Use simple send_message if aiosmtplib.send is giving issues
+        # Or ensure full configuration
         await aiosmtplib.send(
             message,
             hostname=settings.SMTP_HOST,
@@ -37,15 +37,16 @@ async def send_report_email(to_email: str, user_name: str, pdf_buf: io.BytesIO, 
             username=settings.SMTP_USER,
             password=settings.SMTP_PASSWORD,
             use_tls=(settings.SMTP_PORT == 465),
-            start_tls=(settings.SMTP_PORT == 587 or settings.SMTP_PORT == 25)
+            start_tls=(settings.SMTP_PORT == 587 or settings.SMTP_PORT == 25),
+            timeout=30.0
         )
         logging.info(f"Email successfully sent to {to_email} via {settings.SMTP_HOST}:{settings.SMTP_PORT}")
         if settings.ADMIN_EMAIL and settings.ADMIN_EMAIL != to_email:
              admin_msg = EmailMessage()
              admin_msg["From"] = settings.SMTP_USER
              admin_msg["To"] = settings.ADMIN_EMAIL
-             admin_msg["Subject"] = f"Новий звіт: {user_name} ({to_email})"
-             admin_msg.set_content(f"Новий користувач завершив тест: {user_name} ({to_email})")
+             admin_msg["Subject"] = f"Новий Ліда: {user_name} ({user_phone})"
+             admin_msg.set_content(f"Користувач завершив тест!\n\nІм'я: {user_name}\nEmail: {to_email}\nТелефон: {user_phone}\n\nЗвіт додано до листа.")
              admin_msg.add_attachment(message.get_payload()[1].get_content(), maintype="application", subtype="pdf", filename=filename)
              await aiosmtplib.send(admin_msg, hostname=settings.SMTP_HOST, port=settings.SMTP_PORT, username=settings.SMTP_USER, password=settings.SMTP_PASSWORD, use_tls=(settings.SMTP_PORT == 465), start_tls=(settings.SMTP_PORT == 587))
 

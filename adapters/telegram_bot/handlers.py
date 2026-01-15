@@ -274,6 +274,7 @@ async def process_email(message: types.Message, state: FSMContext):
     await send_report_email(
         to_email=email,
         user_name=data.get("user_name"),
+        user_phone=data.get("user_phone", "Не вказано"),
         pdf_buf=pdf_buf,
         filename=f"Archetype_{data.get('user_name')}.pdf"
     )
