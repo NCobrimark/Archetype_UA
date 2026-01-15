@@ -1,4 +1,5 @@
 import asyncio
+# Bot Version: 1.0.5 - Final Fixes
 import logging
 import sys
 from aiogram import Bot, Dispatcher
