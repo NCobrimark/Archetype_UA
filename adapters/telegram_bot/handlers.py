@@ -1,5 +1,6 @@
 import io
 import random
+import asyncio
 from aiogram import Router, F, types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -168,18 +169,25 @@ async def finish_test(message: types.Message, state: FSMContext):
     for remaining in range(total_seconds - step, -1, -step):
         await asyncio.sleep(step)
         mins, secs = divmod(remaining, 60)
-        await timer_msg.edit_text(f"⏳ <b>Аналізую ваші результати...</b>\nЗалишилось: {mins}:{secs:02d}", parse_mode="HTML")
+        try:
+            await timer_msg.edit_text(f"⏳ <b>Аналізую ваші результати...</b>\nЗалишилось: {mins}:{secs:02d}", parse_mode="HTML")
+        except Exception as e:
+            import logging
+            logging.error(f"Timer edit failed: {e}")
+            # If edit fails, we just continue or stop
     
-    # Ensure AI is done
+    # Ensure AI is done with a safety timeout
     meta_title = None
     if ai_task:
         try:
-            ai_res = await ai_task
+            # We already waited 2 minutes, AI should be done. 
+            # But let's wait a bit more just in case.
+            ai_res = await asyncio.wait_for(ai_task, timeout=10.0) 
             meta_title = ai_res.get("title")
             await state.update_data(meta_title=meta_title)
         except Exception as e:
             import logging
-            logging.error(f"AI Synthesis failed during timer: {e}")
+            logging.error(f"AI Synthesis failed or timed out: {e}")
 
     # 3. Final Results
     await timer_msg.delete()
