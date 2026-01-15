@@ -34,13 +34,15 @@ def create_radar_chart(scores: Dict[str, int]) -> io.BytesIO:
         try:
             # If it's already an Enum member or a string that matches one
             arch_enum = ArchetypeType(arch_key) if isinstance(arch_key, str) else arch_key
-            name = arch_enum.ukrainian_name.split(' (')[0]
-            display_labels.append(name)
+            # Use format: "Укр (Eng)"
+            name_uk = arch_enum.ukrainian_name.split(' (')[0]
+            name_en = arch_enum.value # Enum value is the English name
+            display_labels.append(f"{name_uk}\n({name_en})")
         except Exception:
             display_labels.append(str(arch_key))
 
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(display_labels)
+    ax.set_xticklabels(display_labels, fontsize=8)
     
     # Y-labels options
     ax.set_yticklabels([]) # Hide radial labels for cleanliness?
