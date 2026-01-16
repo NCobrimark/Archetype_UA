@@ -40,26 +40,29 @@ def generate_pdf_report(
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
     
-    font_registered = False
-    # Try common Linux paths for DejaVuSans (standard in many Docker images)
-    font_paths = [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
-        "/usr/share/fonts/truetype/freefont/FreeSans.ttf"
-    ]
+    font_name = 'Helvetica'
+    # Project bundled font (Arial supports Cyrillic)
+    bundled_font_path = os.path.join(base_dir, "data", "arial.ttf")
     
-    for path in font_paths:
-        if os.path.exists(path):
-            try:
-                pdfmetrics.registerFont(TTFont('DejaVuSans', path))
-                font_name = 'DejaVuSans'
-                font_registered = True
-                break
-            except:
-                continue
-    
-    if not font_registered:
-        font_name = 'Helvetica' # Default fallback (no Cyrillic support)
+    if os.path.exists(bundled_font_path):
+        try:
+            pdfmetrics.registerFont(TTFont('Arial', bundled_font_path))
+            font_name = 'Arial'
+        except Exception as e:
+            print(f"Error registering bundled font: {e}")
+    else:
+        # Fallback to system search
+        font_paths = [
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"
+        ]
+        for path in font_paths:
+            if os.path.exists(path):
+                try:
+                    pdfmetrics.registerFont(TTFont('CustomFont', path))
+                    font_name = 'CustomFont'
+                    break
+                except: continue
 
     title_style = ParagraphStyle('MainTitle', parent=styles['Heading1'], fontName=font_name, fontSize=28, alignment=1, spaceAfter=40, textColor=colors.darkblue)
     subtitle_style = ParagraphStyle('SubTitle', parent=styles['Heading2'], fontName=font_name, fontSize=18, alignment=1, spaceAfter=20, textColor=colors.blue)

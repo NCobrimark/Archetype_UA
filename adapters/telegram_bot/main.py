@@ -1,4 +1,4 @@
-# Bot Version: 1.1.3 - Cyrillic PDF Support & Conflict Resolution
+# Bot Version: 1.1.4 - Bundled Font (Cyrillic Fix) & SMTP Retry
 import asyncio
 import logging
 import sys

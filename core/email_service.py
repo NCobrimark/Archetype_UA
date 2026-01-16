@@ -37,7 +37,7 @@ async def send_report_email(to_email: str, user_name: str, user_phone: str, pdf_
             password=settings.SMTP_PASSWORD,
             use_tls=(settings.SMTP_PORT == 465),
             start_tls=(settings.SMTP_PORT != 465),
-            timeout=15.0
+            timeout=30.0
         )
         logging.info(f"Email successfully sent to {to_email}")
         if settings.ADMIN_EMAIL and settings.ADMIN_EMAIL != to_email:
