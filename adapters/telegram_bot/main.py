@@ -1,4 +1,4 @@
-# Bot Version: 1.1.1 - PDF Markup Fix
+# Bot Version: 1.1.2 - Pro PDF, AI Fast-Fail & Conflict Hint
 import asyncio
 import logging
 import sys

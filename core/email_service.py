@@ -28,8 +28,7 @@ async def send_report_email(to_email: str, user_name: str, user_phone: str, pdf_
     )
 
     try:
-        # Use simple send_message if aiosmtplib.send is giving issues
-        # Or ensure full configuration
+        # Port 587 with STARTTLS is generally more compatible with cloud providers like Railway
         await aiosmtplib.send(
             message,
             hostname=settings.SMTP_HOST,
@@ -37,10 +36,10 @@ async def send_report_email(to_email: str, user_name: str, user_phone: str, pdf_
             username=settings.SMTP_USER,
             password=settings.SMTP_PASSWORD,
             use_tls=(settings.SMTP_PORT == 465),
-            start_tls=(settings.SMTP_PORT == 587 or settings.SMTP_PORT == 25),
-            timeout=30.0
+            start_tls=(settings.SMTP_PORT != 465),
+            timeout=15.0
         )
-        logging.info(f"Email successfully sent to {to_email} via {settings.SMTP_HOST}:{settings.SMTP_PORT}")
+        logging.info(f"Email successfully sent to {to_email}")
         if settings.ADMIN_EMAIL and settings.ADMIN_EMAIL != to_email:
              admin_msg = EmailMessage()
              admin_msg["From"] = settings.SMTP_USER
