@@ -1,4 +1,4 @@
-# Bot Version: 1.1.2 - Pro PDF, AI Fast-Fail & Conflict Hint
+# Bot Version: 1.1.3 - Cyrillic PDF Support & Conflict Resolution
 import asyncio
 import logging
 import sys

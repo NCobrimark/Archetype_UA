@@ -37,10 +37,34 @@ def generate_pdf_report(
     styles = getSampleStyleSheet()
     
     # Custom Styles
-    title_style = ParagraphStyle('MainTitle', parent=styles['Heading1'], fontSize=28, alignment=1, spaceAfter=40, textColor=colors.darkblue)
-    subtitle_style = ParagraphStyle('SubTitle', parent=styles['Heading2'], fontSize=18, alignment=1, spaceAfter=20, textColor=colors.blue)
-    heading_pro = ParagraphStyle('HeadingPro', parent=styles['Heading2'], fontSize=16, spaceBefore=20, spaceAfter=10, textColor=colors.darkblue)
-    normal_pro = ParagraphStyle('NormalPro', parent=styles['Normal'], fontSize=11, leading=14, spaceAfter=10)
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    
+    font_registered = False
+    # Try common Linux paths for DejaVuSans (standard in many Docker images)
+    font_paths = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSans.ttf"
+    ]
+    
+    for path in font_paths:
+        if os.path.exists(path):
+            try:
+                pdfmetrics.registerFont(TTFont('DejaVuSans', path))
+                font_name = 'DejaVuSans'
+                font_registered = True
+                break
+            except:
+                continue
+    
+    if not font_registered:
+        font_name = 'Helvetica' # Default fallback (no Cyrillic support)
+
+    title_style = ParagraphStyle('MainTitle', parent=styles['Heading1'], fontName=font_name, fontSize=28, alignment=1, spaceAfter=40, textColor=colors.darkblue)
+    subtitle_style = ParagraphStyle('SubTitle', parent=styles['Heading2'], fontName=font_name, fontSize=18, alignment=1, spaceAfter=20, textColor=colors.blue)
+    heading_pro = ParagraphStyle('HeadingPro', parent=styles['Heading2'], fontName=font_name, fontSize=16, spaceBefore=20, spaceAfter=10, textColor=colors.darkblue)
+    normal_pro = ParagraphStyle('NormalPro', parent=styles['Normal'], fontName=font_name, fontSize=11, leading=14, spaceAfter=10)
     bullet_style = ParagraphStyle('Bullet', parent=normal_pro, leftIndent=20, firstLineIndent=-10)
 
     # 1. COVER PAGE

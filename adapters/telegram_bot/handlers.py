@@ -256,14 +256,20 @@ async def process_email(message: types.Message, state: FSMContext):
     # Chart
     chart_buf = create_radar_chart(scoring_result['archetype_scores'])
     
-    pdf_buf = generate_pdf_report(
-        user_name=data.get("user_name"),
-        user_phone=data.get("user_phone", "Не вказано"),
-        meta_archetype_title=data.get("meta_title", "Архетипний Профіль"),
-        scoring_data=scoring_result,
-        strategy_content=strategy_text,
-        chart_buffer=chart_buf
-    )
+    try:
+        pdf_buf = generate_pdf_report(
+            user_name=data.get("user_name"),
+            user_phone=data.get("user_phone", "Не вказано"),
+            meta_archetype_title=data.get("meta_title", "Архетипний Профіль"),
+            scoring_data=scoring_result,
+            strategy_content=strategy_text,
+            chart_buffer=chart_buf
+        )
+    except Exception as e:
+        import logging
+        logging.error(f"PDF Generation Failed: {e}")
+        await message.answer("❌ Сталася помилка при генерації PDF. Але ваші результати збережені, ми надішлемо їх пізніше.")
+        return
     
     pdf_file = BufferedInputFile(pdf_buf.getvalue(), filename=f"Archetype_{data.get('user_name')}.pdf")
     
