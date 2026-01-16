@@ -104,15 +104,39 @@ class AIService:
             return response.choices[0].message.content
         except Exception as e:
             logging.error(f"AI Strategy Error (Check API Key): {e}")
-            # Fallback for empty/failed AI - summarize from descriptions
-            fallback = "## Ваша стратегія (Автоматичне резюме)\n\n"
-            fallback += "На жаль, сервіс ШІ тимчасово недоступний, але ось ваші ключові орієнтири на основі бази знань:\n\n"
-            for arch_key, score in sorted(scores.items(), key=lambda x: x[1], reverse=True)[:2]:
+            # ENHANCED Fallback from local DB
+            top_archs = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:3]
+            
+            fallback = "## Ваш стратегічний аналіз (PRO версія)\n\n"
+            fallback += "Цей розділ побудовано на основі вашої унікальної архітектури особистості. "
+            fallback += "Навіть без прямого підключення до ШІ, ми підготували глибокий аналіз за вашими домінантними векторами.\n\n"
+
+            # 1. Combination Analysis
+            fallback += "### 1. Глибинний аналіз комбінації\n"
+            primary_info = [descriptions.get(k, {}) for k, v in top_archs[:2]]
+            titles = [i.get('title', '') for i in primary_info if i]
+            fallback += f"Ви поєднуєте в собі енергії **{', '.join(titles)}**. Це створює унікальний баланс між вашими цілями та методами їх досягнення.\n\n"
+
+            # 2. Detailed Breakdown per Archetype
+            fallback += "### 2. Позиціонування та Тональність\n"
+            for arch_key, score in top_archs:
                 info = descriptions.get(arch_key, {})
-                if info:
-                    fallback += f"### {info.get('title')}\n"
-                    fallback += f"- **Тіньовий аспект:** {info.get('shadow')}\n"
-                    fallback += f"- **Позиціонування:** {info.get('tone')}\n\n"
+                if not info: continue
+                fallback += f"#### {info.get('title')} ({score} балів)\n"
+                fallback += f"- **Тіньовий аспект:** {info.get('shadow')}\n"
+                fallback += f"- **Голос бренду (Tone of Voice):** {info.get('tone')}\n"
+                fallback += f"- **Ключовий словник:** {', '.join(info.get('vocabulary', []))}\n"
+                fallback += f"- **Візуальні коди:** {info.get('visuals')}\n\n"
+
+            # 3. Actionable advice
+            fallback += "### 3. Рекомендації для росту\n"
+            fallback += "- **Позиціонування:** Використовуйте свій словник бренду в усіх комунікаціях.\n"
+            fallback += "- **Автентичність:** Не ігноруйте тіньовий аспект — усвідомлення слабкості робить бренд людянішим.\n"
+            fallback += "- **Візуал:** Орієнтуйтеся на візуальні коди ваших топ-архетипів для створення впізнаваного стилю.\n\n"
+            
+            fallback += "> [!NOTE]\n"
+            fallback += "> Це автоматичне резюме, згенероване на основі бази знань."
+            
             return fallback
 
 ai_service = AIService()

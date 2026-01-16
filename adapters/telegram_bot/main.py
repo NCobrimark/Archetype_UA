@@ -1,4 +1,4 @@
-# Bot Version: 1.1.4 - Bundled Font (Cyrillic Fix) & SMTP Retry
+# Bot Version: 1.1.5 - Pro Fallback & Robust SMTP
 import asyncio
 import logging
 import sys
