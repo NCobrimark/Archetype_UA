@@ -94,7 +94,8 @@ def generate_pdf_report(
             continue
         
         # Simple Markdown parsing
-        line = line.replace('**', '<b>').replace('**', '</b>')
+        import re
+        line = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', line)
         
         if line.startswith('###'):
             story.append(Paragraph(line.lstrip('#').strip(), heading_pro))

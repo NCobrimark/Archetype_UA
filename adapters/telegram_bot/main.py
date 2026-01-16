@@ -1,6 +1,5 @@
-# Bot Version: 1.0.9 - Fix Crash & AI Fallback Enabled
+# Bot Version: 1.1.1 - PDF Markup Fix
 import asyncio
-import logging
 import logging
 import sys
 from aiogram import Bot, Dispatcher
